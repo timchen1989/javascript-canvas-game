@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+<h3>Training 99</h3>
+<canvas id="cvs" style="border:1px solid white;" width="640px" height="480px"></canvas>
+</body>
+</html>
+<script>
+// document.body.style.background="black";
+let cvs = document.querySelector("#cvs");
+let context = cvs.getContext("2d");
+let drawables=[];
+//設計要被畫的物件
+class Point{
+    constructor(){
+        this.x=50;
+        this.y=50;
+        this.y=Math.random()*1;
+        
+        //改變移動方式, 加入速率
+        this.vx=Math.random()*2+0.5;
+        this.vy=0;
+        context.fillStyle = "rgb("+Math.floor(Math.random()*100)+","+Math.floor(Math.random()*100)+","+Math.floor(Math.random()*100)+")";
+    }
+    update(){
+        this.x+=this.vx;
+        this.y+=this.vy;
+        //製造引力(重力)效果
+        this.vy+=0.02;
+        //回收機制，將沒有用的物件刪除，不然陣列會爆炸，用flag來判斷是否將物件刪除。
+        // if(this.x>cvs.width || this.y>cvs.height || this.x<0 || this.y <0){
+        //     return true;
+        // } else {
+        //     return false;
+        // }
+        return this.x>cvs.width || this.y>cvs.height || this.x<0 || this.y <0;
+    }
+    draw(){
+        context.fillRect(this.x, this.y, 10, 10);
+    }
+}
+class Smoke{
+    constructor(x, y){
+
+        // this.x=cvs.width/2;
+        // this.y=cvs.height-40;
+        
+        //for smoke system
+        this.x=x;
+        this.y=y;
+
+        this.size=20;
+        this.alpha=1;
+        this.vx=Math.random()*1-0.5;// -0.5~0.5
+        this.vy=Math.random()*1.5-1;// -0.5~-2.5 負的代表會往上
+    }
+    update(){
+        this.vy+=0.008;
+        if(this.vy>-0.3){
+            this.vy=-0.3;
+        }
+        this.x+=this.vx;
+        this.y+=this.vy;
+        this.size+=0.33;
+        this.alpha-=0.004;
+        if(this.alpha<=0.3){
+            this.alpha=0.3;
+        }
+        return this.y<0 || this.alpha==0;
+    }
+    draw(){
+        //避免影響其他context, 所以這邊先儲存目前的畫布設定(乾淨的設定)
+        context.save();
+        context.globalAlpha=this.alpha;
+        //遊戲中圖片不能load完才畫，需要立刻畫圖，所以要有預載的機制將圖片或音效等等等的東西載入
+        context.drawImage(image, 
+        this.x-this.size/2, this.y-this.size/2,
+        this.size, this.size);
+        //恢復先前儲存的設定
+        context.restore()
+    }
+}
+
+
+
+//預先讀取圖片等等資源，再開始interval
+// let image = new Image();
+// image.src="smoke.png";
+// image.addEventListener("load", function(){
+    //才遊戲開始
+    // window.setInterval(refresh3, 20);
+// })
+function refresh3(){
+    drawables.push(new Smoke());
+    //更新資料
+    for(let i=0; i<drawables.length; i++){
+        let isDead = drawables[i].update();
+        if(isDead){
+            drawables.splice(i, 1);
+            i--;
+        }
+    }
+    //畫過的圖案不會消失，所以需要將整個canvas清空(重畫)
+    context.clearRect(0, 0, cvs.width, cvs.height);
+    //繪製
+    for(let i=0; i<drawables.length; i++){
+        drawables[i].draw();
+    }
+}
+class SmokeSystem{
+    constructor(x, y){
+        this.x=x;
+        this.y=y;
+        this.smokes=[];
+    }
+    update(){
+        this.smokes.push(new Smoke(this.x, this.y));
+        //更新資料
+        for(let i=0; i<this.smokes.length; i++){
+            let isDead = this.smokes[i].update();
+            if(isDead){
+                this.smokes.splice(i, 1);
+                i--;
+            }
+        }
+    }
+    draw(){
+        for(let i=0; i<this.smokes.length; i++){
+            this.smokes[i].draw();
+         }
+    }
+
+}
+drawables.push(new SmokeSystem(200,100), new SmokeSystem(400,200));
+let image = new Image();
+image.src="smoke.png";
+image.addEventListener("load", function(){
+    //才遊戲開始
+    window.setInterval(refresh4, 20);
+});
+function refresh4(){
+    //更新資料
+    for(let i=0; i<drawables.length; i++){
+        let isDead = drawables[i].update();
+        if(isDead){
+            drawables.splice(i, 1);
+            i--;
+        }
+    }
+    //畫過的圖案不會消失，所以需要將整個canvas清空(重畫)
+    context.clearRect(0, 0, cvs.width, cvs.height);
+    //繪製
+    for(let i=0; i<drawables.length; i++){
+        drawables[i].draw();
+    }
+}
+
+
+//宣告陣列放要被畫的東西
+// let drawables=[];
+// window.setInterval(refresh2, 5);
+function refresh2(){
+    
+    //更新資料
+    for(let i=0; i<drawables.length; i++){
+        let isDead = drawables[i].update();
+        if(isDead){
+            drawables.splice(i, 1);
+            i--;
+        }
+    }
+    //畫過的圖案不會消失，所以需要將整個canvas清空(重畫)
+    context.clearRect(0, 0, cvs.width, cvs.height);
+    //繪製
+    for(let i=0; i<drawables.length; i++){
+        drawables[i].draw();
+    }
+}
+
+
+// let x1=10, y=10;
+// let x2=10, y2=10;
+// Math.random()*10
+// function refresh(){
+//     if(x1<200){
+//         //更新資料
+//         x1=x1+1;
+//         x2+=2;
+//         y2+=2;
+//         //畫過的圖案不會消失，所以需要將整個canvas清空(重畫)
+//         context.clearRect(0, 0, cvs.width, cvs.height);
+//         //繪製
+//         context.fillRect(x1, y, 100, 100);
+//         context.fillRect(x2, y2, 100, 100);
+//     }
+// }
+// window.setInterval(function(){
+    // refresh();
+// }, 10);
+</script>
